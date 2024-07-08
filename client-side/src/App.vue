@@ -15,6 +15,8 @@ const password = ref('');
 const registerName = ref('');
 const registerEmail = ref('');
 const registerPassword = ref('');
+const onlineUsers = ref([]);
+const notifications = ref([]);
 
 onBeforeMount(() => {
   socket.emit('findAllMessages', {}, (response) => {
@@ -32,6 +34,12 @@ onBeforeMount(() => {
       typingDisplay.value = '';
     }
   });
+
+  socket.on('onlineUsers', (users) => {
+    onlineUsers.value = users;
+  });
+
+  fetchNotifications();
 });
 
 const sendMessage = () => {
@@ -73,6 +81,7 @@ const register = async () => {
 
     if (response.data.success) {
       alert('Sign in Successfull.');
+      localStorage.setItem('jwtToken', response.data.token);
       email.value = registerEmail.value;
       password.value = registerPassword.value;
       join();
@@ -85,6 +94,16 @@ const register = async () => {
   }
 };
 
+const logout = () => {
+  socket.emit('logout', {name: name.value});
+  socket.disconnect();
+  joined.value = false;
+  name.value = '';
+  messages.value = [];
+  email.value = '';
+  password.value = '';
+};
+
 let timeout;
 
 const emitTyping = () => {
@@ -93,6 +112,21 @@ const emitTyping = () => {
   timeout = setTimeout(() => {
     socket.emit('typing', { isTyping: false });
   }, 5000);
+};
+
+const fetchNotifications = async () => {
+  try {
+    const response = await axios.get('http://localhost:3001/auth/noti', {
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+
+    notifications.value = response.data.notiList;
+  } catch (error) {
+    console.error('Fetch Notifications Error:', error);
+    alert('An error occurred while fetching notifications.');
+  }
 };
 </script>
 
@@ -117,6 +151,23 @@ const emitTyping = () => {
       </form>
     </div>
     <div class="chat-container" v-else>
+      <div class="online-users">
+        <h3>Online Users:</h3>
+        <ul>
+          <li v-for="user in onlineUsers" :key="user">{{ user }}</li>
+        </ul>
+      </div>
+      <div class="notification-list" v-if="notifications.length > 0">
+        <h3>Notifications:</h3>
+        <ul>
+          <li v-for="notification in notifications" :key="notification._id">
+            <b>{{ notification.name }}</b>: {{ notification.text }}
+          </li>
+        </ul>
+      </div>
+      <div v-else>
+        <p>No notifications.</p>
+      </div>
       <div class="message-container">
         <div v-for="message in messages">
           [{{ message.name }}] : {{ message.text }}
@@ -130,10 +181,10 @@ const emitTyping = () => {
           </form>
         </div>
       </div>
+      <button @click="logout">Logout</button>
     </div>
   </div>
 </template>
-
 <style>
 @import './assets/base.css';
 </style>

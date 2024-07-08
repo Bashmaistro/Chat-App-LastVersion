@@ -1,5 +1,6 @@
-import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { isArray, IsArray, IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { Type } from 'class-transformer';
+import { Message } from 'src/messages/entities/message.entity';
 
 
 
@@ -21,6 +22,12 @@ import { Type } from 'class-transformer';
 
     @IsString()
     clientId: string;
+
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => Message)
+    notiList: Message[];
+
 
     
 

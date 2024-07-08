@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Get, Injectable, Req, UseGuards } from '@nestjs/common';
 import { CreateUserDto} from './dto/create-auth.dto';
 import { AuthDto } from './dto/auth.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -6,6 +6,7 @@ import { User } from './entities/auth.entity';
 import { Model } from 'mongoose';
 import {JwtService} from '@nestjs/jwt'
 import { UpdateUserDto } from './dto/update-auth.dto';
+import { JwtAuthGuard } from './Guard/jwt.guard';
 
 
 @Injectable()
@@ -61,5 +62,18 @@ export class AuthService {
   async findByClientId(clientId : string){
     const user = await this.authModel.findOne({clientId: clientId})
     return user;
+  }
+
+  async updateNotificationList( userid: string,updateUserDto : UpdateUserDto ){
+
+  
+
+  
+   return this.authModel.findByIdAndUpdate(userid , updateUserDto, {new:true})
+  }
+
+  async getAllUsersNormal(){
+    const users = await this.authModel.find();
+    return users;
   }
 }
